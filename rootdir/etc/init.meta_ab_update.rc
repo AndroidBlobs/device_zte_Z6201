@@ -1,0 +1,7 @@
+#zte add for ab_update when meta mode
+
+import /system/etc/init/update_verifier.rc
+import /vendor/etc/init/android.hardware.boot@1.0-service.rc
+
+on post-fs
+    start vendor.boot-hal-1-0

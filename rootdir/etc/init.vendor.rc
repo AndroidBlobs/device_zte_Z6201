@@ -1,0 +1,168 @@
+# Copyright (C) 2012 ZTE by RUIJIAGUI
+#
+# IMPORTANT: Do not create world writable files or directories.
+# This is a common source of Android security bugs.
+#
+
+#cpu hungry policy
+on init
+    mkdir /dev/cpuctl/cpu_hungry_app
+    mkdir /mnt/vendor/carrier 0777 system system
+    chown system system /dev/cpuctl/cpu_hungry_app/tasks
+    chmod 0666 /dev/cpuctl/cpu_hungry_app/tasks
+    write /dev/cpuctl/cpu_hungry_app/cpu.shares 52
+    write /dev/cpuctl/cpu_hungry_app/cpu.rt_period_us 1000000
+    write /dev/cpuctl/cpu_hungry_app/cpu.rt_runtime_us 950000
+
+on brd-post-fs
+    #add for after-sale-requirement
+    mkdir /mnt/vendor/persist/zstats 0755 system system
+    chown system system /sys/class/power_supply/bcl/charge_full
+    chown system system /sys/class/power_supply/bcl/charge_full_design
+    chown system system /sys/class/power_supply/bcl/current_avg
+    chown system system  /mnt/vendor/persist/zstats/capacity.dat
+    chown system system  /mnt/vendor/persist/zstats/charging.dat
+    chown system system  /mnt/vendor/persist/zstats/cycle.dat
+    chown root system  /dev/kmsg
+    chmod 0664  /mnt/vendor/persist/zstats/capacity.dat
+    chmod 0664  /mnt/vendor/persist/zstats/charging.dat
+    chmod 0664  /mnt/vendor/persist/zstats/cycle.dat
+    chmod 0664  /dev/kmsg
+
+on charger
+    chown system system /sys/class/leds/red/trigger
+    chown system system /sys/class/leds/red/pwm_dim_freq
+    chown system system /sys/class/leds/red/pwm_duty
+    chown system system /sys/class/leds/red/delay_on
+    chown system system /sys/class/leds/red/delay_off
+    chown system system /sys/class/leds/green/trigger
+    chown system system /sys/class/leds/green/pwm_dim_freq
+    chown system system /sys/class/leds/green/pwm_duty
+    chown system system /sys/class/leds/green/delay_on
+    chown system system /sys/class/leds/green/delay_off
+
+    mkdir /mnt/vendor/persist
+    wait /dev/block/platform/bootdevice/by-name/persist
+    mount ext4 /dev/block/platform/bootdevice/by-name/persist /mnt/vendor/persist noatime nosuid nodev barrier=1
+
+    trigger brd-post-fs
+    class_start brd_charger
+
+on post-fs
+    chown system system /mnt/vendor/carrier
+    chmod 0771 /mnt/vendor/carrier
+    restorecon_recursive /mnt/vendor/carrierr
+
+    chown root system /mnt/vendor/persist
+    chmod 0771 /mnt/vendor/persist
+    mkdir /mnt/vendor/persist/data 0700 system system
+    mkdir /mnt/vendor/persist/bms 0700 root system
+    restorecon_recursive /mnt/vendor/persist
+
+on post-fs-data
+    # DTS_EAGLE START
+    mkdir /data/vendor/audio
+    mkdir /data/vendor/audio/dts
+    chown media audio /data/vendor/audio/dts
+    chmod 0771 /data/vendor/audio/dts
+
+    copy /data/vendor/audio/dts/dts_audio_settings /data/vendor/audio/dts/temp
+    copy /vendor/etc/dts/dts_audio_settings /data/vendor/audio/dts/dts_audio_settings
+    copy /data/vendor/audio/dts/temp data/vendor/audio/dts/dts_audio_settings
+    rm /data/vendor/audio/dts/temp
+    chown audioserver audio /data/vendor/audio/dts/dts_audio_settings
+
+    setprop ro.vendor.dts.licensepath "/vendor/etc/dts/"
+    setprop ro.vendor.dts.cfgpath "/vendor/etc/dts/"
+    # DTS_EAGLE END
+
+    #Create calibration dir by westalgo
+    mkdir /data/vendor/westalgo
+    chown system system /data/vendor/westalgo
+    chmod 0777 /data/vendor/westalgo
+    #Create folder for dual camera by westalgo.
+    copy /vendor/etc/camera/cache_data /data/vendor/westalgo/cache_data
+    copy /vendor/etc/camera/megviisegment_model /data/vendor/westalgo/megviisegment_model
+    copy /vendor/etc/camera/model_mdl_cache /data/vendor/westalgo/model_mdl_cache
+
+    chmod 0766 /data/vendor/westalgo/cache_data
+    chmod 0766 /data/vendor/westalgo/megviisegment_model
+    chmod 0766 /data/vendor/westalgo/model_mdl_cache
+on boot
+    #add for charging policy
+    chown system system /sys/module/zte_misc/parameters/demo_charging_policy
+    chown system system /sys/module/zte_misc/parameters/expired_charging_policy
+
+# touchscreen
+    chown system system /proc/touchscreen/wake_gesture
+    chmod 644 /proc/touchscreen/wake_gesture
+    chown system system /proc/touchscreen/smart_cover
+    chmod 644 /proc/touchscreen/smart_cover
+
+# for sar sensor
+    chown system system /sys/bus/i2c/drivers/sx932x/3-0028/status
+
+# add for touch self-test
+    chown system system /sys/devices/virtual/tsp_fw/touchscreen/tpd_test_cmd
+    chown system system /sys/devices/virtual/tsp_fw/touchscreen/tpd_test_filename
+    chown system system /sys/devices/virtual/tsp_fw/touchscreen/tpd_test_ini_file_path
+    chown system system /sys/devices/virtual/tsp_fw/touchscreen/tpd_test_save_file_path
+    chown system system /sys/devices/virtual/tsp_fw/touchscreen/tpd_test_save_file_name
+    chmod 0646 /sys/devices/virtual/tsp_fw/touchscreen/tpd_test_cmd
+    chmod 0646 /sys/devices/virtual/tsp_fw/touchscreen/tpd_test_filename
+    chmod 0646 /sys/devices/virtual/tsp_fw/touchscreen/tpd_test_ini_file_path
+    chmod 0646 /sys/devices/virtual/tsp_fw/touchscreen/tpd_test_save_file_path
+    chmod 0646 /sys/devices/virtual/tsp_fw/touchscreen/tpd_test_save_file_name
+
+# add for flashlight
+    chown system system /sys/class/flashlight_core/flashlight/flashlight_strobe
+    chmod 0646 /sys/class/flashlight_core/flashlight/flashlight_strobe
+
+    trigger brd-post-fs
+
+    class_start brd_normal
+
+on property:sys.demochargingpolicy.protect=1
+    write /sys/module/zte_misc/parameters/demo_charging_policy 1
+on property:sys.demochargingpolicy.protect=0
+    write /sys/module/zte_misc/parameters/demo_charging_policy 0
+
+on property:persist.sys.keeppower.anyway=1
+    setprop persist.sys.overtemp.enable 0
+    write /sys/module/zte_misc/parameters/demo_charging_policy 1
+    write /sys/module/zte_misc/parameters/policy_lowtemp_en 0
+on property:persist.sys.keeppower.anyway=0
+    setprop persist.sys.overtemp.enable 1
+    write /sys/module/zte_misc/parameters/demo_charging_policy 0
+    write /sys/module/zte_misc/parameters/policy_lowtemp_en 1
+
+on property:persist.sys.expiredchargingpolicy.protect=1
+    write /sys/module/zte_misc/parameters/expired_policy_en 1
+on property:persist.expiredchargingpolicy.protect=0
+    write /sys/module/zte_misc/parameters/expired_policy_en 0
+
+#shutdownanim service
+service shutdownanim /system/bin/bootanimation -s
+    class core animation
+    user root
+    group root graphics audio system
+    disabled
+    oneshot
+    writepid /dev/stune/top-app/tasks
+
+service brd_normal /vendor/bin/battery_record_daemon normal
+    class brd_normal
+    user system
+    group system
+    oneshot
+
+service brd_charger /vendor/bin/battery_record_daemon charger
+    class brd_charger
+    user system
+    group system
+    oneshot
+
+# MT6739 close jankyframe
+on property:ro.board.platform=mt6739
+    setprop persist.jankyframe.enable 0
+
